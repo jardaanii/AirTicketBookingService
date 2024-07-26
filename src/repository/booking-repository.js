@@ -38,6 +38,20 @@ class BookingRepository {
       );
     }
   }
+
+  async get(bookingId) {
+    try {
+      const booking = await Booking.findByPk(bookingId);
+      return booking;
+    } catch (error) {
+      throw new AppError(
+        "Repository Error",
+        "Cannot upadte Booking",
+        "There was some issue updating the booking, please try again later",
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 }
 
 module.exports = BookingRepository;

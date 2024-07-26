@@ -41,6 +41,32 @@ class BookingService {
       throw new ServiceError();
     }
   }
+
+  async updateBooking(bookingId) {
+    try {
+      const booking = await this.bookingRepository.get(bookingId);
+      const flightId = booking.flightId;
+
+      const getFlightRequestURL = `${FLIGHT_SERVICE_PATH}/api/v1/flights/${flightId}`;
+      const response = await axios.get(getFlightRequestURL);
+
+      const flightData = response.data.data;
+      const updateFlightRequestURL = `${FLIGHT_SERVICE_PATH}/api/v1/flights/${booking.flightId}`;
+      await axios.patch(updateFlightRequestURL, {
+        totalSeats: flightData.totalSeats + booking.noOfSeats,
+      });
+      const cancledBooking = await this.bookingRepository.update(bookingId, {
+        status: "Cancelled",
+      });
+
+      return cancledBooking;
+    } catch (error) {
+      if (error.name == "RepositoryError" || error.name == "ValidationError") {
+        throw error;
+      }
+      throw new ServiceError();
+    }
+  }
 }
 
 module.exports = BookingService;
