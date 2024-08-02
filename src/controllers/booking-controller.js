@@ -1,25 +1,36 @@
 const { StatusCodes } = require("http-status-codes");
 const { BookingService } = require("../services/index");
-const { createChannel, publishMessage } = require("../utils/messageQueue");
-const { REMINDER_BINDING_KEY } = require("../config/server-config");
-
 const bookingService = new BookingService();
-
 class BookingController {
-  constructor() {
-    // this.channel = channel;
-  }
-
-  async sendMessageToQueue(req, res) {
-    const channel = await createChannel();
-    const data = { message: "Success" };
-    publishMessage(channel, REMINDER_BINDING_KEY, JSON.stringify(data));
-    return res.status(StatusCodes.OK).json({
-      message: "Successfully published the message",
-      success: true,
-      err: {},
-    });
-  }
+  sendMessageToQueue = async (req, res) => {
+    try {
+      const payload = {
+        data: {
+          subject: "This is a notification from queue",
+          content: "Some queue will subscribe this",
+          recepientEmail: "kiraacodes@gmail.com",
+          notificationTime: "2024-07-25T06:41:20",
+        },
+        service: "CREATE_TICKET",
+      };
+      await publishMessage(
+        channel,
+        REMINDER_BINDING_KEY,
+        JSON.stringify(payload)
+      );
+      return res.status(StatusCodes.OK).json({
+        message: "Successfully published the message",
+        success: true,
+        err: {},
+      });
+    } catch (error) {
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        message: "Failed to publish the message",
+        success: false,
+        err: error.message,
+      });
+    }
+  };
 
   async create(req, res) {
     try {
@@ -31,12 +42,15 @@ class BookingController {
         data: response,
       });
     } catch (error) {
-      return res.status(error.statusCode).json({
-        message: error.message,
-        success: false,
-        err: error.explaination,
-        data: {},
-      });
+      console.error("Error in booking creation:", error);
+      return res
+        .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({
+          message: error.message,
+          success: false,
+          err: error.explaination,
+          data: {},
+        });
     }
   }
 
@@ -50,12 +64,14 @@ class BookingController {
         data: response,
       });
     } catch (error) {
-      return res.status(error.statusCode).json({
-        message: error.message,
-        success: false,
-        err: error.explaination,
-        data: {},
-      });
+      return res
+        .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({
+          message: error.message,
+          success: false,
+          err: error.explaination,
+          data: {},
+        });
     }
   }
 }
